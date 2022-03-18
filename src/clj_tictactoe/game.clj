@@ -2,12 +2,6 @@
 
 (def players ["X" "O"])
 
-(defn- generate-board
-  "Generates a game board pre-filled with nil"
-  []
-  (nth (iterate #(into [] (take 3 (repeat %))) nil)
-       2))
-
 (defn- next-player
   "Returns the index of the next player"
   [current-player]
@@ -15,8 +9,27 @@
     (inc current-player)
     0))
 
+(defn- update-state
+  "Returns a tuple containing win/winner or draw state, otherwise nil"
+  [{:keys [board state] :as game}]
+  (let [rows board
+        columns (apply mapv vector board)
+        up-down-diagonal (map #(get-in board [% %]) (range 3))
+        down-up-diagonal (map #(get-in board [(- 2 %) %]) (range 3))
+        lines-to-test (conj (concat rows columns) up-down-diagonal down-up-diagonal)
+        winning-rows (filter #(and (apply = %) (some? (first %))) lines-to-test)]
+    (assoc game :state (cond
+                         (seq winning-rows) [:win (first (first winning-rows))]
+                         (every? some? (flatten board)) [:draw]
+                         :else [:next-player (next-player (second state))]))))
 
-(defn initialize
+(defn- generate-board
+  "Generates a game board pre-filled with nil"
+  []
+  (nth (iterate #(into [] (take 3 (repeat %))) nil)
+       2))
+
+(defn initial-game
   "Returns the initial game"
   []
   {:board (generate-board)
@@ -24,21 +37,27 @@
 
 (defn turn
   "Receives a player's turn as a positional vector, checks for errors and winning"
-  [game pos]
-  (let [current-player (second (:state game))
-        symbol (players current-player)]
-    (-> game
-        (update :board #(assoc-in % pos symbol))
-        (update :state #(assoc % 1 (next-player current-player))))))
+  [{:keys [state] :as game} pos]
+  (if (= :next-player (first state))
+    (let [current-player (second state)]
+      (-> game
+          (update :board #(assoc-in % pos current-player))
+          (update-state)))
+    game))
 
 
 (comment
-  (initialize)
-  (-> (initialize)
+  (initial-game)
+  (-> (initial-game)
       (turn [0 0])
       (turn [1 1]))
   (clojure.pprint/pprint
    (reductions turn
-               (initialize)
+               (initial-game)
                [[0 0] [1 1] [1 0] [2 0]
-                [0 2] [0 1] [2 1] [1 2] [2 2]])))
+                [0 2] [0 1] [2 1] [1 2] [2 2]]))
+  (clojure.pprint/pprint
+   (reductions turn
+               (initial-game)
+               [[1 1] [0 0] [1 2] [0 1] [1 0]
+                [2 2] [2 1]])))
