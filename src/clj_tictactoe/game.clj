@@ -37,13 +37,20 @@
 
 (defn turn
   "Receives a player's turn as a positional vector, checks for errors and winning"
-  [{:keys [state] :as game} pos]
-  (if (= :next-player (first state))
-    (let [current-player (second state)]
-      (-> game
-          (update :board #(assoc-in % pos current-player))
-          (update-state)))
-    game))
+  [{:keys [state board] :as game} pos]
+  (cond
+    (not (every? #(<= 0 % 2) pos)) (assoc game
+                                          :error
+                                          (str pos " is not a valid position"))
+    (some? (get-in board pos)) (assoc game
+                                      :error
+                                      (str pos " is already taken"))
+    :else (if (= :next-player (first state))
+            (let [current-player (second state)]
+              (-> game
+                  (update :board #(assoc-in % pos current-player))
+                  (update-state)))
+            game)))
 
 
 (comment
@@ -60,4 +67,9 @@
    (reductions turn
                (initial-game)
                [[1 1] [0 0] [1 2] [0 1] [1 0]
-                [2 2] [2 1]])))
+                [2 2] [2 1]]))
+  (-> (initial-game)
+      (turn [1 1])
+      (turn [1 1]))
+  (-> (initial-game)
+      (turn [4 4])))
