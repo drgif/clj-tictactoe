@@ -45,12 +45,13 @@
     (some? (get-in board pos)) (assoc game
                                       :error
                                       (str pos " is already taken"))
-    :else (if (= :next-player (first state))
-            (let [current-player (second state)]
-              (-> game
-                  (update :board #(assoc-in % pos current-player))
-                  (update-state)))
-            game)))
+    :else (dissoc (if (= :next-player (first state))
+                    (let [current-player (second state)]
+                      (-> game
+                          (update :board #(assoc-in % pos current-player))
+                          (update-state)))
+                    game)
+                  :error)))
 
 
 (comment
@@ -67,6 +68,11 @@
    (reductions turn
                (initial-game)
                [[1 1] [0 0] [1 2] [0 1] [1 0]
+                [2 2] [2 1]]))
+  (clojure.pprint/pprint
+   (reductions turn
+               (initial-game)
+               [[1 1] [-1 -1] [0 2] [0 0] [0 1] [0 0]
                 [2 2] [2 1]]))
   (-> (initial-game)
       (turn [1 1])
