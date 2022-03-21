@@ -2,12 +2,18 @@
 
 (def players ["X" "O"])
 
+(defn- current-player
+  "Returns the currently active player"
+  [{:keys [state]}]
+  (second state))
+
 (defn- next-player
   "Returns the index of the next player"
-  [current-player]
-  (if (contains? players (inc current-player))
-    (inc current-player)
-    0))
+  [game]
+  (let [current-player (current-player game)]
+    (if (contains? players (inc current-player))
+      (inc current-player)
+      0)))
 
 (defn- winner
   "Returns the winning player, otherwise nil"
@@ -27,12 +33,12 @@
 
 (defn- update-state
   "Updates the game's :state key"
-  [{:keys [board state] :as game}]
+  [{:keys [board] :as game}]
   (let [winner (winner board)]
     (assoc game :state (cond
                          winner [:win winner]
                          (board-full? board) [:draw]
-                         :else [:next-player (next-player (second state))]))))
+                         :else [:next-player (next-player game)]))))
 
 (defn- turn-error
   "Returns an error string if applicable, otherwise nil"
@@ -45,8 +51,7 @@
 (defn- generate-board
   "Generates a game board pre-filled with nil"
   []
-  (nth (iterate #(into [] (take 3 (repeat %))) nil)
-       2))
+  (nth (iterate #(into [] (take 3 (repeat %))) nil) 2))
 
 (defn initial-game
   "Returns the initial game"
@@ -59,11 +64,10 @@
   [game pos]
   (if-let [error (turn-error game pos)]
     (assoc game :error error)
-    (let [current-player (second (:state game))]
-      (-> game
-          (dissoc :error)
-          (update :board #(assoc-in % pos current-player))
-          (update-state)))))
+    (-> game
+        (dissoc :error)
+        (update :board #(assoc-in % pos (current-player game)))
+        (update-state))))
                   
 
 
