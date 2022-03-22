@@ -30,7 +30,7 @@
       (catch Exception e
         error-tuple))))
 
-(defn -main
+(defn play-cli
   "Play a game on the commandline"
   []
   (println "Let's play a game!")
@@ -50,7 +50,13 @@
       :draw (println "It's a draw!")
       :win (println "Player " (g/players (second (:state game))) " wins!"))))
 
+(defn- -main
+  "New main function for webservice"
+  [& args]
+  (println "Doing nothing..."))
+
 (comment
   (-main)
+  (play-cli)
   (row-string [0 1 nil])
   (println (board-string [[0 1 nil] [nil 1 0] [0 nil 1]])))
