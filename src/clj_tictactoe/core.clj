@@ -1,6 +1,9 @@
 (ns clj-tictactoe.core
   (:require [clj-tictactoe.game :as g]
-            [clojure.string :as str])
+            [clojure.string :as str]
+            [ring.adapter.jetty :as rj]
+            [ring.middleware.params :as rp]
+            [ring.util.response :as response])
   (:gen-class))
 
 (defn- row-string
@@ -50,10 +53,22 @@
       :draw (println "It's a draw!")
       :win (println "Player " (g/players (second (:state game))) " wins!"))))
 
+
+;; cURL version starts here
+(def game (atom nil))
+
+(defn handler [{:keys [params]}]
+  (response/response (if-let [{:strs [X Y]} params]
+                       "Something"
+                       "Nothing")))
+
 (defn- -main
-  "New main function for webservice"
+  "Play a game via cURLs"
   [& args]
-  (println "Doing nothing..."))
+  (reset! game (g/initial-game))
+  (let [app (rp/wrap-params handler)]
+    (rj/run-jetty app {:port 3000
+                       :join? false})))
 
 (comment
   (-main)
